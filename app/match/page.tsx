@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Clock, Goal, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Clock, Goal, Repeat2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useMemo } from "react";
 
@@ -19,6 +19,7 @@ export default function LiveMatchPage() {
     recordGoal,
     recordTimeout,
     setTimerDuration,
+    swapPosts,
   } = useSessionStore();
   const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
   const leftTeam = match?.leftTeamId ? teamById.get(match.leftTeamId) : undefined;
@@ -97,8 +98,19 @@ export default function LiveMatchPage() {
 
           <section className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
             <TeamCard team={leftTeam} label="Left Post" post="left" />
-            <div className="flex items-center justify-center rounded-lg bg-[#142018] px-5 py-4 text-3xl font-black text-white sm:px-3">
-              VS
+            <div className="flex items-center justify-center gap-3 rounded-lg bg-[#142018] px-5 py-4 text-3xl font-black text-white sm:flex-col sm:px-3">
+              <span>VS</span>
+              <Button
+                type="button"
+                size="icon-lg"
+                variant="secondary"
+                aria-label="Swap team posts"
+                title="Swap team posts"
+                className="size-12 rounded-full bg-white text-[#142018] hover:bg-[#dff15f]"
+                onClick={swapPosts}
+              >
+                <Repeat2 className="size-6" />
+              </Button>
             </div>
             <TeamCard team={rightTeam} label="Right Post" post="right" />
           </section>

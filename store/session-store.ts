@@ -19,6 +19,7 @@ type SessionStore = SessionState & {
   loadSamplePlayers: () => void;
   generateTeams: () => void;
   startMatches: () => void;
+  swapPosts: () => void;
   recordGoal: (post: Post) => void;
   recordTimeout: () => void;
   resetSession: () => void;
@@ -96,6 +97,17 @@ export const useSessionStore = create<SessionStore>()(
         if (teams.length < 2) return;
         set({ match: startMatch(teams) });
       },
+      swapPosts: () =>
+        set((state) => ({
+          match: state.match
+            ? {
+                ...state.match,
+                leftTeamId: state.match.rightTeamId,
+                rightTeamId: state.match.leftTeamId,
+                lastEvent: "Teams swapped posts. Queue order did not change.",
+              }
+            : null,
+        })),
       recordGoal: (post) =>
         set((state) => ({
           teams: state.teams.map((team) => {
