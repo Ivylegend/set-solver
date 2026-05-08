@@ -26,6 +26,17 @@ export type MatchState = {
   lastEvent: string;
 };
 
+export type MatchHistoryEntry = {
+  id: string;
+  matchNumber: number;
+  leftTeamId: string | null;
+  rightTeamId: string | null;
+  winnerTeamId: string | null;
+  result: "goal" | "timeout";
+  decidedPost: Post | null;
+  createdAt: string;
+};
+
 export type SessionState = {
   id: string | null;
   name: string;
@@ -33,5 +44,6 @@ export type SessionState = {
   teams: Team[];
   unassignedPlayers: Player[];
   match: MatchState | null;
+  matchHistory: MatchHistoryEntry[];
   timerDuration: number;
 };

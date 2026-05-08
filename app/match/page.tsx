@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Clock, Goal, Repeat2, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Clock, Goal, History, Repeat2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useMemo } from "react";
 
@@ -54,8 +54,16 @@ export default function LiveMatchPage() {
             Teams
           </Link>
         </Button>
-        <div className="rounded-md bg-[#dff15f] px-3 py-2 text-sm font-black uppercase text-[#142018]">
-          Match #{match.matchNumber}
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="lg" className="h-11 bg-white">
+            <Link href="/history">
+              <History className="size-5" />
+              History
+            </Link>
+          </Button>
+          <div className="rounded-md bg-[#dff15f] px-3 py-2 text-sm font-black uppercase text-[#142018]">
+            Match #{match.matchNumber}
+          </div>
         </div>
       </header>
 
@@ -91,7 +99,7 @@ export default function LiveMatchPage() {
           </section>
 
           <MatchTimer
-            key={`${match.matchNumber}-${match.leftTeamId}-${match.rightTeamId}-${timerDuration}`}
+            key={`${match.matchNumber}-${timerDuration}`}
             duration={timerDuration}
             onExpire={handleExpire}
           />
@@ -123,7 +131,7 @@ export default function LiveMatchPage() {
               onClick={() => recordGoal("left")}
             >
               <Goal className="size-6" />
-              Left Won
+              {leftTeam.name} Won
             </Button>
             <Button
               type="button"
@@ -142,7 +150,7 @@ export default function LiveMatchPage() {
               onClick={() => recordGoal("right")}
             >
               <Goal className="size-6" />
-              Right Won
+              {rightTeam.name} Won
             </Button>
           </section>
 

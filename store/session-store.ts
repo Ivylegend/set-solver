@@ -33,6 +33,7 @@ const initialState: SessionState = {
   teams: [],
   unassignedPlayers: [],
   match: null,
+  matchHistory: [],
   timerDuration: 5 * 60,
 };
 
@@ -66,6 +67,7 @@ export const useSessionStore = create<SessionStore>()(
           teams: [],
           unassignedPlayers: [],
           match: null,
+          matchHistory: [],
         }));
 
         return true;
@@ -76,6 +78,7 @@ export const useSessionStore = create<SessionStore>()(
           teams: [],
           unassignedPlayers: [],
           match: null,
+          matchHistory: [],
         })),
       loadSamplePlayers: () =>
         set({
@@ -83,6 +86,7 @@ export const useSessionStore = create<SessionStore>()(
           teams: [],
           unassignedPlayers: [],
           match: null,
+          matchHistory: [],
         }),
       generateTeams: () => {
         const generated = createTeams(get().players);
@@ -90,6 +94,7 @@ export const useSessionStore = create<SessionStore>()(
           teams: generated.teams,
           unassignedPlayers: generated.unassignedPlayers,
           match: null,
+          matchHistory: [],
         });
       },
       startMatches: () => {
@@ -109,18 +114,49 @@ export const useSessionStore = create<SessionStore>()(
             : null,
         })),
       recordGoal: (post) =>
-        set((state) => ({
-          teams: state.teams.map((team) => {
-            const winningTeamId =
-              post === "left" ? state.match?.leftTeamId : state.match?.rightTeamId;
-            return team.id === winningTeamId
-              ? { ...team, wins: team.wins + 1 }
-              : team;
-          }),
-          match: state.match ? handleGoalScored(state.match, post) : null,
-        })),
+        set((state) => {
+          const winningTeamId =
+            post === "left" ? state.match?.leftTeamId : state.match?.rightTeamId;
+
+          return {
+            teams: state.teams.map((team) =>
+              team.id === winningTeamId ? { ...team, wins: team.wins + 1 } : team,
+            ),
+            matchHistory: state.match
+              ? [
+                  ...state.matchHistory,
+                  {
+                    id: crypto.randomUUID(),
+                    matchNumber: state.match.matchNumber,
+                    leftTeamId: state.match.leftTeamId,
+                    rightTeamId: state.match.rightTeamId,
+                    winnerTeamId: winningTeamId ?? null,
+                    result: "goal",
+                    decidedPost: post,
+                    createdAt: new Date().toISOString(),
+                  },
+                ]
+              : state.matchHistory,
+            match: state.match ? handleGoalScored(state.match, post) : null,
+          };
+        }),
       recordTimeout: () =>
         set((state) => ({
+          matchHistory: state.match
+            ? [
+                ...state.matchHistory,
+                {
+                  id: crypto.randomUUID(),
+                  matchNumber: state.match.matchNumber,
+                  leftTeamId: state.match.leftTeamId,
+                  rightTeamId: state.match.rightTeamId,
+                  winnerTeamId: null,
+                  result: "timeout",
+                  decidedPost: null,
+                  createdAt: new Date().toISOString(),
+                },
+              ]
+            : state.matchHistory,
           match: state.match ? handleTimeout(state.match) : null,
         })),
       resetSession: () => set(initialState),
@@ -136,6 +172,7 @@ export const useSessionStore = create<SessionStore>()(
         teams: state.teams,
         unassignedPlayers: state.unassignedPlayers,
         match: state.match,
+        matchHistory: state.matchHistory,
         timerDuration: state.timerDuration,
       }),
     },
