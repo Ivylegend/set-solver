@@ -37,6 +37,14 @@ export type MatchHistoryEntry = {
   createdAt: string;
 };
 
+export type MatchTimerState = {
+  matchKey: string | null;
+  durationSeconds: number;
+  remainingSeconds: number;
+  isRunning: boolean;
+  startedAt: number | null;
+};
+
 export type SessionState = {
   id: string | null;
   name: string;
@@ -45,5 +53,6 @@ export type SessionState = {
   unassignedPlayers: Player[];
   match: MatchState | null;
   matchHistory: MatchHistoryEntry[];
+  timer: MatchTimerState;
   timerDuration: number;
 };

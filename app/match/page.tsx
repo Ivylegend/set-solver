@@ -101,6 +101,7 @@ export default function LiveMatchPage() {
           <MatchTimer
             key={`${match.matchNumber}-${timerDuration}`}
             duration={timerDuration}
+            matchKey={`${match.matchNumber}-${timerDuration}`}
             onExpire={handleExpire}
           />
 

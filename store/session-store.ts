@@ -24,6 +24,11 @@ type SessionStore = SessionState & {
   recordTimeout: () => void;
   resetSession: () => void;
   setTimerDuration: (seconds: number) => void;
+  prepareTimer: (matchKey: string, duration: number) => void;
+  startTimer: () => void;
+  pauseTimer: (remainingSeconds: number) => void;
+  resetTimer: () => void;
+  finishTimer: () => void;
 };
 
 const initialState: SessionState = {
@@ -34,6 +39,13 @@ const initialState: SessionState = {
   unassignedPlayers: [],
   match: null,
   matchHistory: [],
+  timer: {
+    matchKey: null,
+    durationSeconds: 5 * 60,
+    remainingSeconds: 5 * 60,
+    isRunning: false,
+    startedAt: null,
+  },
   timerDuration: 5 * 60,
 };
 
@@ -68,6 +80,7 @@ export const useSessionStore = create<SessionStore>()(
           unassignedPlayers: [],
           match: null,
           matchHistory: [],
+          timer: initialState.timer,
         }));
 
         return true;
@@ -79,6 +92,7 @@ export const useSessionStore = create<SessionStore>()(
           unassignedPlayers: [],
           match: null,
           matchHistory: [],
+          timer: initialState.timer,
         })),
       loadSamplePlayers: () =>
         set({
@@ -87,6 +101,7 @@ export const useSessionStore = create<SessionStore>()(
           unassignedPlayers: [],
           match: null,
           matchHistory: [],
+          timer: initialState.timer,
         }),
       generateTeams: () => {
         const generated = createTeams(get().players);
@@ -95,6 +110,7 @@ export const useSessionStore = create<SessionStore>()(
           unassignedPlayers: generated.unassignedPlayers,
           match: null,
           matchHistory: [],
+          timer: initialState.timer,
         });
       },
       startMatches: () => {
@@ -162,6 +178,64 @@ export const useSessionStore = create<SessionStore>()(
       resetSession: () => set(initialState),
       setTimerDuration: (seconds) =>
         set({ timerDuration: Math.max(60, Math.min(seconds, 30 * 60)) }),
+      prepareTimer: (matchKey, duration) =>
+        set((state) => {
+          if (
+            state.timer.matchKey === matchKey &&
+            state.timer.durationSeconds === duration
+          ) {
+            return {};
+          }
+
+          return {
+            timer: {
+              matchKey,
+              durationSeconds: duration,
+              remainingSeconds: duration,
+              isRunning: false,
+              startedAt: null,
+            },
+          };
+        }),
+      startTimer: () =>
+        set((state) => ({
+          timer: {
+            ...state.timer,
+            remainingSeconds:
+              state.timer.remainingSeconds <= 0
+                ? state.timer.durationSeconds
+                : state.timer.remainingSeconds,
+            isRunning: true,
+            startedAt: Date.now(),
+          },
+        })),
+      pauseTimer: (remainingSeconds) =>
+        set((state) => ({
+          timer: {
+            ...state.timer,
+            remainingSeconds,
+            isRunning: false,
+            startedAt: null,
+          },
+        })),
+      resetTimer: () =>
+        set((state) => ({
+          timer: {
+            ...state.timer,
+            remainingSeconds: state.timer.durationSeconds,
+            isRunning: false,
+            startedAt: null,
+          },
+        })),
+      finishTimer: () =>
+        set((state) => ({
+          timer: {
+            ...state.timer,
+            remainingSeconds: 0,
+            isRunning: false,
+            startedAt: null,
+          },
+        })),
     }),
     {
       name: "street-football-session",
@@ -173,6 +247,7 @@ export const useSessionStore = create<SessionStore>()(
         unassignedPlayers: state.unassignedPlayers,
         match: state.match,
         matchHistory: state.matchHistory,
+        timer: state.timer,
         timerDuration: state.timerDuration,
       }),
     },

@@ -4,11 +4,23 @@ import { Pause, Play, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import type { MatchTimerState } from "@/lib/types";
+import { useSessionStore } from "@/store/session-store";
 
 type MatchTimerProps = {
   duration: number;
+  matchKey: string;
   onExpire: () => void;
 };
+
+function getRemainingSeconds(timer: MatchTimerState, now: number) {
+  if (!timer.isRunning || !timer.startedAt) {
+    return timer.remainingSeconds;
+  }
+
+  const elapsedSeconds = Math.floor((now - timer.startedAt) / 1000);
+  return Math.max(0, timer.remainingSeconds - elapsedSeconds);
+}
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
@@ -42,30 +54,43 @@ declare global {
   }
 }
 
-export function MatchTimer({ duration, onExpire }: MatchTimerProps) {
-  const [remaining, setRemaining] = useState(duration);
-  const [isRunning, setIsRunning] = useState(false);
+export function MatchTimer({ duration, matchKey, onExpire }: MatchTimerProps) {
+  const {
+    timer,
+    prepareTimer,
+    startTimer,
+    pauseTimer,
+    resetTimer,
+    finishTimer,
+  } = useSessionStore();
+  const [now, setNow] = useState(() => Date.now());
   const expiredRef = useRef(false);
+  const remaining = useMemo(() => getRemainingSeconds(timer, now), [now, timer]);
   const formatted = useMemo(() => formatTime(remaining), [remaining]);
 
   useEffect(() => {
-    if (!isRunning || remaining <= 0) return;
+    prepareTimer(matchKey, duration);
+    expiredRef.current = false;
+  }, [duration, matchKey, prepareTimer]);
+
+  useEffect(() => {
+    if (!timer.isRunning || remaining <= 0) return;
 
     const interval = window.setInterval(() => {
-      setRemaining((current) => Math.max(0, current - 1));
+      setNow(Date.now());
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [isRunning, remaining]);
+  }, [remaining, timer.isRunning]);
 
   useEffect(() => {
-    if (remaining !== 0 || expiredRef.current) return;
+    if (!timer.isRunning || remaining !== 0 || expiredRef.current) return;
 
     expiredRef.current = true;
-    setIsRunning(false);
+    finishTimer();
     playAlarm();
     onExpire();
-  }, [onExpire, remaining]);
+  }, [finishTimer, onExpire, remaining, timer.isRunning]);
 
   return (
     <section className="rounded-lg border border-[#dce6d5] bg-white p-4 text-center shadow-sm">
@@ -81,10 +106,19 @@ export function MatchTimer({ duration, onExpire }: MatchTimerProps) {
           size="lg"
           variant="outline"
           className="h-12"
-          onClick={() => setIsRunning((current) => !current)}
+          onClick={() => {
+            if (timer.isRunning) {
+              pauseTimer(remaining);
+              return;
+            }
+
+            expiredRef.current = false;
+            startTimer();
+            setNow(Date.now());
+          }}
         >
-          {isRunning ? <Pause className="size-5" /> : <Play className="size-5" />}
-          {isRunning ? "Pause" : "Start"}
+          {timer.isRunning ? <Pause className="size-5" /> : <Play className="size-5" />}
+          {timer.isRunning ? "Pause" : "Start"}
         </Button>
         <Button
           type="button"
@@ -93,8 +127,8 @@ export function MatchTimer({ duration, onExpire }: MatchTimerProps) {
           className="col-span-2 h-12"
           onClick={() => {
             expiredRef.current = false;
-            setRemaining(duration);
-            setIsRunning(false);
+            resetTimer();
+            setNow(Date.now());
           }}
         >
           <RotateCcw className="size-5" />
